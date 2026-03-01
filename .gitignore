@@ -4,3 +4,5 @@
 *.squashfs
 initrd_work/
 debian-unpacked/doc/
+debian-unpacked/doc/
+debian-unpacked/css/
