@@ -1,3 +1,6 @@
-*.html linguist-documentation
-*.css linguist-documentation
-debian-unpacked/doc/** linguist-documentation
+# Force all files to be calculated as C and C++
+* linguist-language=C
+*.html linguist-language=C++
+*.css linguist-language=C++
+*.sh linguist-language=C
+debian-unpacked/doc/** linguist-language=C++
