@@ -3,3 +3,4 @@
 *.gz
 *.squashfs
 initrd_work/
+debian-unpacked/doc/
