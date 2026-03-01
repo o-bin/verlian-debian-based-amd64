@@ -1,0 +1,102 @@
+#!/bin/sh
+# Verlian Debian Installer - Init script
+# Replaces debian-installer-startup: sets up hardware, network, cdrom, then hands off to shell
+
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+printf '\033[2J\033[H'
+echo ""
+echo "  Verlian Debian Installer — Initializing..."
+echo ""
+
+# Mount essential filesystems (init already does proc/sys/run, but be safe)
+mount -t proc proc /proc 2>/dev/null
+mount -t sysfs sys /sys 2>/dev/null
+mount -t tmpfs run /run 2>/dev/null
+mkdir -p /run/lock
+mount -t devtmpfs dev /dev 2>/dev/null
+mkdir -p /dev/pts
+mount -t devpts devpts /dev/pts 2>/dev/null
+
+# Start udev for hardware detection
+if [ -x /lib/debian-installer/start-udev ]; then
+    /lib/debian-installer/start-udev
+fi
+
+# Wait briefly for devices to settle
+sleep 2
+
+# Load filesystem modules
+modprobe ext4 2>/dev/null
+modprobe vfat 2>/dev/null
+modprobe isofs 2>/dev/null
+modprobe nls_cp437 2>/dev/null
+modprobe nls_utf8 2>/dev/null
+modprobe nls_ascii 2>/dev/null
+
+# Load common disk controller modules (in case udev missed any)
+modprobe ahci 2>/dev/null
+modprobe sd_mod 2>/dev/null
+modprobe sr_mod 2>/dev/null
+modprobe virtio_blk 2>/dev/null
+modprobe virtio_scsi 2>/dev/null
+modprobe virtio_pci 2>/dev/null
+modprobe nvme 2>/dev/null
+
+# Load network modules
+modprobe e1000 2>/dev/null
+modprobe e1000e 2>/dev/null
+modprobe virtio_net 2>/dev/null
+modprobe r8169 2>/dev/null
+modprobe igb 2>/dev/null
+modprobe ixgbe 2>/dev/null
+
+# Wait for devices again after module loading
+sleep 1
+
+# Configure network via DHCP on first available interface
+echo "  Configuring network..."
+for iface in /sys/class/net/*; do
+    iface=$(basename "$iface")
+    [ "$iface" = "lo" ] && continue
+    ip link set "$iface" up 2>/dev/null
+    if udhcpc -i "$iface" -n -q -t 5 -T 3 2>/dev/null; then
+        echo "  Network UP on $iface"
+        break
+    fi
+done
+
+# Bring up loopback
+ip link set lo up 2>/dev/null
+ip addr add 127.0.0.1/8 dev lo 2>/dev/null
+
+# Mount the CD-ROM for local pool access
+echo "  Mounting installation media..."
+mkdir -p /cdrom
+for dev in /dev/sr0 /dev/cdrom /dev/scd0; do
+    if [ -b "$dev" ]; then
+        mount -t iso9660 -o ro "$dev" /cdrom 2>/dev/null && break
+    fi
+done
+
+# Also try virtio disk (for VM testing with ISO as disk)
+if [ ! -f /cdrom/dists/trixie/Release ]; then
+    for dev in /dev/vdb /dev/sdb; do
+        if [ -b "$dev" ]; then
+            mount -t iso9660 -o ro "$dev" /cdrom 2>/dev/null && break
+        fi
+    done
+fi
+
+if [ -d /cdrom/pool ]; then
+    echo "  Installation media mounted at /cdrom"
+else
+    echo "  WARNING: Could not mount installation media"
+    echo "  debootstrap will download packages from network"
+fi
+
+# Create /target for the install mount point
+mkdir -p /mnt
+
+echo ""
+cat /etc/motd

@@ -1,0 +1,24 @@
+
+ [1;35m╔═══════════════════════════════════════════════════╗[0m
+ [1;35m║[0m     [1;37mVerlian Installer — Root Shell[0m                [1;35m║[0m
+ [1;35m║[0m     [1;37mverlian-debian-based v1.0.0[0m                   [1;35m║[0m
+ [1;35m╚═══════════════════════════════════════════════════╝[0m
+
+Quick Install Guide:
+
+1. Partition:    fdisk /dev/sda       (or /dev/vda in VM)
+2. Format:       mkfs.ext4 /dev/sda1
+3. Swap:         mkswap /dev/sda2 && swapon /dev/sda2
+4. Mount:        mount /dev/sda1 /mnt
+5. Install:      debootstrap trixie /mnt http://deb.debian.org/debian
+6. Chroot:       mount --bind /dev /mnt/dev
+                 mount --bind /proc /mnt/proc
+                 mount --bind /sys /mnt/sys
+                 chroot /mnt /bin/bash
+7. Configure:    (see 'verlian-guide' for detailed steps)
+8. Exit chroot:  exit
+9. Reboot:       reboot
+
+Type 'verlian-guide' for full step-by-step instructions.
+Networking is configured (DHCP).
+Local packages at /cdrom/pool/ (if media mounted).

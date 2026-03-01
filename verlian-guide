@@ -1,0 +1,142 @@
+#!/bin/sh
+# Verlian Debian Install Guide — detailed step-by-step
+
+less <<'GUIDE'
+═══════════════════════════════════════════════════════
+  Verlian Debian Installer — Full Guide
+  Debian 13 "Trixie" — amd64
+═══════════════════════════════════════════════════════
+
+  STEP 1: IDENTIFY DISKS
+  ──────────────────────
+  List available disks:
+    fdisk -l
+
+  Common devices:
+    /dev/sda    — SATA/SCSI disk
+    /dev/vda    — VirtIO disk (VM)
+    /dev/nvme0n1 — NVMe SSD
+
+
+  STEP 2: PARTITION
+  ─────────────────
+  Example: one root + one swap partition
+
+    fdisk /dev/sda
+
+    In fdisk:
+      g        ← create GPT partition table
+      n        ← new partition (root), accept defaults, set size e.g. +20G
+      n        ← new partition (swap), use remaining space
+      t 2 19   ← set partition 2 type to Linux swap
+      w        ← write and exit
+
+  For UEFI systems, also create an EFI partition:
+      n        ← new partition, +512M
+      t 1 1    ← set type to EFI System
+
+
+  STEP 3: FORMAT
+  ──────────────
+    mkfs.ext4 /dev/sda1          ← root
+    mkswap /dev/sda2             ← swap
+    swapon /dev/sda2
+
+  For UEFI:
+    mkfs.ext4 /dev/sda2          ← root
+    mkswap /dev/sda3             ← swap
+    (EFI partition is formatted later in chroot)
+
+
+  STEP 4: MOUNT
+  ─────────────
+    mount /dev/sda1 /mnt
+
+  For UEFI:
+    mount /dev/sda2 /mnt
+    mkdir -p /mnt/boot/efi
+    mount /dev/sda1 /mnt/boot/efi
+
+
+  STEP 5: INSTALL BASE SYSTEM
+  ───────────────────────────
+  Using network mirror:
+    debootstrap trixie /mnt http://deb.debian.org/debian
+
+  This downloads and installs the minimal Debian base.
+  Takes 2-10 minutes depending on network speed.
+
+
+  STEP 6: ENTER THE NEW SYSTEM
+  ────────────────────────────
+    mount --bind /dev  /mnt/dev
+    mount --bind /proc /mnt/proc
+    mount --bind /sys  /mnt/sys
+    mount --bind /run  /mnt/run
+    chroot /mnt /bin/bash
+
+
+  STEP 7: CONFIGURE (inside chroot)
+  ──────────────────────────────────
+
+  a) Set hostname:
+    echo "verlian" > /etc/hostname
+
+  b) Set timezone:
+    ln -sf /usr/share/zoneinfo/America/New_York /etc/localtime
+
+  c) Set locale:
+    apt install locales
+    echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+    locale-gen
+    echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+
+  d) Set root password:
+    passwd
+
+  e) Create fstab:
+    Example (adjust UUIDs with 'blkid'):
+      echo "/dev/sda1  /     ext4  defaults  0 1" >> /etc/fstab
+      echo "/dev/sda2  none  swap  sw        0 0" >> /etc/fstab
+
+  f) Configure APT sources:
+    cat > /etc/apt/sources.list << EOF
+    deb http://deb.debian.org/debian trixie main contrib non-free-firmware
+    deb http://deb.debian.org/debian-security trixie-security main
+    deb http://deb.debian.org/debian trixie-updates main
+    EOF
+    apt update
+
+  g) Install kernel:
+    apt install linux-image-amd64
+
+  h) Install bootloader (BIOS):
+    apt install grub-pc
+    grub-install /dev/sda
+    update-grub
+
+  For UEFI:
+    apt install grub-efi-amd64 efibootmgr
+    grub-install --target=x86_64-efi --efi-directory=/boot/efi
+    update-grub
+
+  i) Install essentials (optional):
+    apt install sudo openssh-server curl vim-tiny
+
+
+  STEP 8: EXIT AND REBOOT
+  ───────────────────────
+    exit                          ← leave chroot
+    umount -R /mnt                ← unmount everything
+    reboot
+
+
+  TROUBLESHOOTING
+  ───────────────
+  - No network?     ip link ; udhcpc -i eth0
+  - No disks?       modprobe ahci ; modprobe sd_mod ; modprobe nvme
+  - Can't mount?    modprobe ext4
+  - DNS issues?     echo "nameserver 8.8.8.8" > /etc/resolv.conf
+
+═══════════════════════════════════════════════════════
+GUIDE

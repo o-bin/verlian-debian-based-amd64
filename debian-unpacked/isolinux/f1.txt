@@ -1,0 +1,25 @@
+                  0fWelcome to Debian GNU/Linux!07                                09F107
+
+This is a Debian 13 (trixie) installation CD-ROM.
+It was built 20260110-10:59; d-i 20250803+deb13u3.
+
+0fHELP INDEX07
+
+0fKEY    TOPIC07
+
+<09F107>   This page, the help index.
+<09F207>   Prerequisites for installing Debian.
+<09F307>   Boot methods for special ways of using this CD-ROM
+<09F407>   Additional boot methods; rescue mode.
+<09F507>   Special boot parameters, overview.
+<09F607>   Special boot parameters for special machines.
+<09F707>   Special boot parameters for selected disk controllers.
+<09F807>   Special boot parameters for the install system.
+<09F907>   How to get help.
+<09F1007>  Copyrights and warranties.
+
+For F1-F9 type control and F then the digit 1-9
+For F10 type control and F then the digit 0
+
+
+Press F2 through F10 for details, or ENTER to 

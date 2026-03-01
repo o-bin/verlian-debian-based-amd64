@@ -1,0 +1,5 @@
+*.iso
+*.deb
+*.gz
+*.squashfs
+initrd_work/

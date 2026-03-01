@@ -1,0 +1,11 @@
+# Verlian Debian Installer — Shell Profile
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export TERM=linux
+export HOME=/root
+export PS1='\[\033[1;35m\]verlian\[\033[0m\]:\w\[\033[1;35m\]$\[\033[0;35m\]>\[\033[0m\] '
+
+# DNS fallback
+if [ ! -s /etc/resolv.conf ]; then
+    echo "nameserver 8.8.8.8" > /etc/resolv.conf
+    echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+fi
